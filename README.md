@@ -17,19 +17,21 @@ This SDK implements a **Hybrid Logging Strategy**:
 ---
 
 ### Installation
-Pull the SDK into your External Logic project via NuGet:
+Pull the latest stable version of the SDK into your External Logic project via NuGet:
 
 ```bash
-dotnet add package ODC.FlightRecorder.SDK
+dotnet add package ODC.FlightRecorder.SDK --version 1.0.2
 ```
 
 ---
 
 ### Quick Start
-To start recording, wrap your logic in a `FlightRecorder` instance. If you are using ODC's native `ILogger` (injected via the constructor), the SDK will handle the heavy lifting of linking the traces.
+To start recording, wrap your logic in a `FlightRecorder` instance. If you are using ODC's native `ILogger` (injected via the constructor), the SDK will handle the heavy lifting of linking the traces. 
+
+**Important:** To ensure your telemetry is not lost during a crash, avoid re-throwing hard exceptions. ODC discards all output parameters when an unhandled exception propagates out of C#.
 
 ```csharp
-public void ProcessOrder(string orderId, out string telemetryJson, ILogger logger = null)
+public void ProcessOrder(string orderId, out string telemetryJson, out bool success, ILogger logger = null)
 {
     // Start the recorder with a correlation ID
     var recorder = new FlightRecorder("ProcessOrder", $"ORD-{orderId}", null, logger);
@@ -39,14 +41,17 @@ public void ProcessOrder(string orderId, out string telemetryJson, ILogger logge
         recorder.AddStep("Validation", "Checking stock levels...");
         // Your logic here...
         
+        success = true;
         telemetryJson = recorder.FinalizeBatchAsJson();
     }
     catch (Exception ex)
     {
-        // Capture the failure details before the process terminates
+        // Capture failure details and return them safely to ODC
         recorder.AddStep("Terminal Failure", "ERROR", ex.Message);
+        
+        success = false;
         telemetryJson = recorder.FinalizeBatchAsJson(hasError: true);
-        throw; 
+        // Do not use 'throw;' here if you want to keep the JSON in your database
     }
 }
 ```
@@ -54,15 +59,21 @@ public void ProcessOrder(string orderId, out string telemetryJson, ILogger logge
 ---
 
 ### Key Features
-* **Native Trace Synchronization**: Automatically captures `Activity.Current.Id` to link business logic steps directly to ODC infrastructure traces.
-* **Terminal Failure Capture**: Designed to successfully log "Hard Exceptions" that would otherwise cause a total loss of telemetry.
-* **Clean Architecture**: Decouples logging infrastructure from business logic, making it ideal for enterprise-grade OutSystems projects.
+* **Native Trace Synchronization**: Automatically captures `Activity.Current.Id` at session start to link business logic steps directly to ODC infrastructure traces.
+* **Terminal Failure Capture**: Specifically designed to retain the execution story even when the business logic hits a critical error.
+* **Clean Architecture**: Decouples your logging from your business logic, making it easier to maintain enterprise-grade OutSystems projects.
+
+### Breaking Changes (v1.0.2)
+* **Property Rename**: The property `Mehodname` in the `TraceSession_ST` structure was renamed to `MethodName` for better clarity.
 
 ### Repository Structure
 * **`/src`**: Contains the core **ODC.FlightRecorder.SDK**.
 * **`/samples`**: Includes implementation examples, such as the **OrderManagement.Test** project.
 * **`/docs`**: Architectural guides and usage documentation.
 
+### Note for Local Builds
+This repository includes a root-level **NuGet.Config** file. If you are building the SDK or samples locally on your machine, ensure this file remains in the root folder. It is configured to ignore private package feeds and pull all dependencies directly from the public NuGet gallery to prevent authentication errors during the build process.
+
 ---
 
-**Built for the OutSystems Community.** *Maintained by Michael de Guzman, Senior Technical Consultant at DB Results.*
+**Built for the OutSystems Community.** *Maintained by Michael de Guzman, OutSystems Champion*
