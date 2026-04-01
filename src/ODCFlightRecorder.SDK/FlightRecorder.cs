@@ -24,7 +24,7 @@ namespace ODCFlightRecorder.SDK {
             _batch = new TraceBatch_ST {
                 SessionData = new TraceSession_ST {
                     Id = sessionId,
-                    MehodName = methodName, 
+                    MethodName = methodName, 
                     CorrelationId = correlationId,
                     StartTime = DateTime.UtcNow,
                     IsError = false

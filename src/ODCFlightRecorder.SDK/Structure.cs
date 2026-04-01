@@ -19,7 +19,7 @@ namespace ODCFlightRecorder {
     [OSStructure]
     public struct TraceSession_ST {
         public string Id;
-        public string MehodName; // Keeping your ODC typo for now so it maps!
+        public string MethodName; // Keeping your ODC typo for now so it maps!
         public DateTime StartTime;
         public int DurationMs;
         public bool IsError;
