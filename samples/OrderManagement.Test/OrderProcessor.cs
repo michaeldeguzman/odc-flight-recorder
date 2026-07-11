@@ -16,9 +16,8 @@ namespace OrderManagement.Test {
 
     public class OrderProcessor : IOrderProcessor
     {
-        private readonly ILogger _logger; // Private field to hold the injected logger
+        private readonly ILogger _logger;
 
-        // 🚀 ODC will automatically inject the logger into this constructor
         public OrderProcessor(ILogger logger)
         {
             _logger = logger;
@@ -26,12 +25,10 @@ namespace OrderManagement.Test {
 
         public void ProcessOrder(string orderId, out string telemetryJson, out bool success)
         {
-            // 🚀 Pass the injected _logger to the FlightRecorder constructor
             var recorder = new FlightRecorder("ProcessOrder", $"REQ-{orderId}", null, _logger);
 
             try
             {
-        // 🚀 Move the simulation inside the try block
                 if (orderId == "FAIL_TEST")
                 {
                     throw new Exception("Simulated Payment Gateway Timeout");
@@ -46,7 +43,6 @@ namespace OrderManagement.Test {
             }
             catch (Exception ex)
             {
-                // Now this catch block actually gets to do its job!
                 recorder.AddStep("Critical Failure", "ERROR", ex.Message);
                 telemetryJson = recorder.FinalizeBatchAsJson(hasError: true);
                 success = false;
@@ -54,8 +50,6 @@ namespace OrderManagement.Test {
         }
         public void ProcessOrderWithHardException(string orderId, string sessionId)
         {
-
-            // 🚀 Wired: Pass the injected _logger here too
             var recorder = new FlightRecorder("ProcessOrderWithHardException", $"REQ-{orderId}", sessionId, _logger);
 
             try
