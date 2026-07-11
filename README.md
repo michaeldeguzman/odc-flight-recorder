@@ -58,6 +58,22 @@ public void ProcessOrder(string orderId, out string telemetryJson, out bool succ
 
 ---
 
+### Getting Your Telemetry Into the ODC Flight Recorder App
+The `telemetryJson` string from `FinalizeBatchAsJson()` is designed to be submitted directly to the companion Forge component, **[ODC Flight Recorder](https://www.outsystems.com/forge/component-overview/24013/odc-flight-recorder-odc)**, for storage and visualization inside your ODC environment.
+
+That app exposes a Service Action for exactly this purpose:
+
+* **`Log_SubmitBatch`** — takes a single Text input parameter, **`TraceBatchJSON`**, which accepts the JSON string produced by this SDK as-is.
+
+Wire it up in your OutSystems flow:
+1. Call your External Logic action (e.g. `ProcessOrder`) and capture its `telemetryJson` output.
+2. Pass that value straight into `Log_SubmitBatch`'s `TraceBatchJSON` input.
+3. The Flight Recorder app parses and stores the batch, alongside whatever ODC already captured natively via the Golden Thread (Monitoring tab / distributed trace).
+
+**Note:** if your action re-throws a hard exception instead of returning `telemetryJson` (see the *Important* callout above), ODC never receives the `out` parameter — so there's nothing to hand to `Log_SubmitBatch` on that path. The Golden Thread side still gets the steps; only the JSON-batch side is lost.
+
+---
+
 ### Key Features
 * **Native Trace Synchronization**: Automatically captures `Activity.Current.Id` at session start to link business logic steps directly to ODC infrastructure traces.
 * **Terminal Failure Capture**: Specifically designed to retain the execution story even when the business logic hits a critical error.
